@@ -2,20 +2,56 @@ import numpy as np
 import torch
 import cv2
 import comfy.model_management
-from scipy.stats import entropy
-from scipy.stats import gaussian_kde
+
 
 class ColorDetection:
     @classmethod
     def INPUT_TYPES(s):
         return {"required": {
             "image": ("IMAGE", ),
-            "threshold": ("FLOAT", {"default": 15.0}),
+            "threshold": ("FLOAT", {"default": 0.15}), # Threshold for b&w detection adjusted based on empirical observation
+            "det_pixel_percent": ("FLOAT", {"default": 0.1}),  # Percentage of pixels as a new parameter
             },
         }
 
     RETURN_TYPES = ("STRING", "FLOAT")
-    RETURN_NAMES = ("color_status", "kl_divergence")
+    RETURN_NAMES = ("color_status", "mean_deviation")
+    FUNCTION = "process"
+
+    CATEGORY = "Image Analysis"
+
+    @torch.no_grad()
+    def process(self, image, threshold, percentage):
+        self.device = comfy.model_management.get_torch_device()
+        batch_size = image.shape[0]
+
+        out = []
+        for i in range(batch_size):
+            img = image[i].numpy().astype(np.float32)
+            img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+            deviations = np.abs(img_rgb - np.mean(img_rgb, axis=2, keepdims=True)).flatten()
+            
+            # Use the provided percentage of pixels for deviation calculation
+            num_pixels_to_consider = int(len(deviations) * (percentage / 100.0))
+            mean_deviation = np.mean(np.sort(deviations)[-num_pixels_to_consider:])
+
+            is_color = mean_deviation > threshold
+            out.append(("Color" if is_color else "Black and White", mean_deviation))
+    
+        return (out,)
+
+    
+class LABColorDetection:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {"required": {
+            "image": ("IMAGE", ),
+            "threshold": ("FLOAT", {"default": 2.5}),  # Threshold adjusted based on empirical observation
+            },
+        }
+
+    RETURN_TYPES = ("STRING", "FLOAT")
+    RETURN_NAMES = ("color_status", "color_difference")
     FUNCTION = "process"
 
     CATEGORY = "Image Analysis"
@@ -28,41 +64,21 @@ class ColorDetection:
         out = []
         for i in range(batch_size):
             img = image[i].numpy().astype(np.float32)
-            img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-            deviations = []
+            lab_img = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
+            l_channel, a_channel, b_channel = cv2.split(lab_img)
+            color_difference = np.mean(np.abs(a_channel - b_channel))
 
-            # Calculate the mean deviation from the mean color value per pixel
-            mean_color = np.mean(img_rgb, axis=2, keepdims=True)
-            deviation = np.abs(img_rgb - mean_color)
-            mean_deviation = np.mean(deviation)
+            is_color = color_difference > threshold
+            color_status = "Color" if is_color else "Black and White"
+            out.append((color_status, color_difference))
 
-            # Create two-color combinations
-            combos = [(img_rgb[:, :, 0], img_rgb[:, :, 1]),
-                      (img_rgb[:, :, 0], img_rgb[:, :, 2]),
-                      (img_rgb[:, :, 1], img_rgb[:, :, 2])]
-
-
-            # Now, for the combos, calculate their mean deviations directly
-            combo_deviations = []
-            for combo in combos:
-                combo_mean = np.mean(np.stack(combo), axis=0)
-                combo_deviation = np.abs(combo[0] - combo_mean) + np.abs(combo[1] - combo_mean)
-                combo_deviations.append(np.mean(combo_deviation))  # Calculate mean deviation for each combo
-
-            # Then, calculate the overall mean deviation including the initial deviation and the combo deviations
-            overall_mean_deviation = np.min([mean_deviation] + combo_deviations)
-            
-            # Calculate the overall mean deviation
-            #mean_deviation = np.mean(overall_mean_deviation)                                
-            is_color = np.mean(mean_deviation) > threshold
-            out.append(("Color" if is_color else "Black and White", deviation))
-    
         return (out,)
 
-
 NODE_CLASS_MAPPINGS = {
-    "ColorDetection": ColorDetection,
+    "RGBColorDetection": ColorDetection,
+    "LABColorDetection": LABColorDetection,
 }
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "ColorDetection": "Color Detection",
+    "ColorDetection": "RGB Color Detection",
+    "LABColorDetection": "LAB Color Detection",
 }

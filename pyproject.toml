@@ -1,0 +1,14 @@
+[project]
+name = "comfyui_colorimagedetection"
+description = "A collection of nodes for detecting color in images, leveraging RGB and LAB color spaces. These nodes aim to distinguish colored images from black and white, including those with color tints."
+version = "1.0.0"
+license = "LICENSE"
+
+[project.urls]
+Repository = "https://github.com/DrMWeigand/ComfyUI_ColorImageDetection"
+#  Used by Comfy Registry https://comfyregistry.org
+
+[tool.comfy]
+PublisherId = ""
+DisplayName = "ComfyUI_ColorImageDetection"
+Icon = ""

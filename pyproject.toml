@@ -1,0 +1,26 @@
+# pyproject.toml
+[project]
+name = "ColorImageDetection" # Unique identifier for your node. Immutable after creation.
+description = """
+A Python package for detecting whether images are colored or black and white using two different color spaces: RGB and LAB. 
+The package includes two classes: 
+- `ColorDetection`: Analyzes images in the RGB color space, calculating mean deviation from pixel color mean to determine color presence.
+- `LABColorDetection`: Analyzes images in the LAB color space, assessing color presence by analyzing differences between the A and B channels.
+
+Features:
+- Detects colored vs. black and white images.
+- Supports analysis of image tensors.
+- Adjustable thresholds for color detection.
+- Uses a percentage of highest deviations for more robust detection.
+- Efficient processing with PyTorch and OpenCV integration.
+"""
+version = "1.0.0" # Custom Node version. Must be semantically versioned.
+dependencies  = [] # Filled in from requirements.txt
+
+[project.urls]
+Repository = "https://github.com/..."
+
+[tool.comfy]
+PublisherId = "drunreal" # TODO (fill in Publisher ID from Comfy Registry Website).
+DisplayName = "Color Image Detection" # Display name for the Custom Node. Can be changed later.
+Icon = "https://www.mws.biz/wp-content/uploads/2021/02/cropped-MWSoftwareFavicon-1-180x180.png" # SVG, PNG, JPG or GIF (MAX. 800x400px)

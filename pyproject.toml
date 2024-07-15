@@ -1,6 +1,6 @@
 # pyproject.toml
 [project]
-name = "ColorImageDetection" # Unique identifier for your node. Immutable after creation.
+name = "colorimagedetection" # Unique identifier for your node. Immutable after creation.
 description = """
 A Python package for detecting whether images are colored or black and white using two different color spaces: RGB and LAB. 
 The package includes two classes: 
